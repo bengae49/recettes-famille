@@ -2,9 +2,108 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Recettes de Famille</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recettes de Famille - Test Base de Données</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
+        h1 { color: #333; }
+        form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #45a049; }
+        .recette-card { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
+        .date { font-size: 0.8rem; color: #888; }
+    </style>
 </head>
 <body>
-    <h1>Hello World</h1>
+
+    <h1>Le Carnet de Recettes en Ligne</h1>
+    
+    <form id="recipeForm">
+        <h3>Partager une vraie recette</h3>
+        <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Gratin de courgettes)" required>
+        <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="4" required></textarea>
+        <button type="submit">Enregistrer définitivement</button>
+    </form>
+
+    <h2>Les Recettes enregistrées</h2>
+    <div id="recipesContainer">
+        <p id="loadingMessage">Chargement des recettes depuis la base de données...</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // CONFIGURATION SUPABASE : Remplacez les valeurs ci-dessous
+        const SUPABASE_URL = https://hyodxzldfnzgsicsfcsp.supabase.co; 
+        const SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5b2R4emxkZm56Z3NpY3NmY3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTMxNDMsImV4cCI6MjA5Nzk2OTE0M30.HkbfxkMG9j5NHFoQcZMavB4XFibRCYDGRt0IxkSsCH0;
+
+        // Initialisation de la connexion avec Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const form = document.getElementById('recipeForm');
+        const container = document.getElementById('recipesContainer');
+        const loadingMessage = document.getElementById('loadingMessage');
+
+        // 1. FONCTION POUR CHARGER LES RECETTES DEPUIS LA BASE DE DONNÉES
+        async function loadRecipes() {
+            // Demander à Supabase toutes les lignes de la table "recipes"
+            const { data, error } = await supabase
+                .from('recipes')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Erreur de chargement :", error);
+                loadingMessage.innerText = "Impossible de charger les recettes.";
+                return;
+            }
+
+            // Effacer le message de chargement
+            container.innerHTML = "";
+
+            if (data.length === 0) {
+                container.innerHTML = "<p>Aucune recette dans la base de données pour le moment.</p>";
+                return;
+            }
+
+            // Afficher chaque recette récupérée
+            data.forEach(recipe => {
+                const date = new Date(recipe.created_at).toLocaleDateString('fr-FR');
+                const recipeCard = document.createElement('div');
+                recipeCard.className = 'recette-card';
+                recipeCard.innerHTML = `
+                    <h3>${recipe.title}</h3>
+                    <p class="date">Ajouté le ${date}</p>
+                    <p style="white-space: pre-line;">${recipe.content}</p>
+                `;
+                container.appendChild(recipeCard);
+            });
+        }
+
+        // 2. ÉCOUTER LA SOUMISSION DU FORMULAIRE POUR SAUVEGARDER
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('recipeTitle').value;
+            const content = document.getElementById('recipeContent').value;
+
+            // Envoyer la nouvelle recette à Supabase
+            const { error } = await supabase
+                .from('recipes')
+                .insert([{ title: title, content: content }]);
+
+            if (error) {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+            } else {
+                form.reset();
+                // Recharger la liste pour afficher la nouvelle recette
+                loadRecipes();
+            }
+        });
+
+        // Charger les recettes automatiquement dès que la page s'ouvre
+        loadRecipes();
+    </script>
 </body>
 </html>
