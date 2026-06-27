@@ -3,213 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recettes de Famille - Accès Sécurisé</title>
+    <title>Recettes de Famille - Test Base de Données</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
-        h1 { color: #333; text-align: center; }
-        form, .auth-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #333; }
+        form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
         input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #45a049; }
-        .recette-card { position: relative; background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
+        .recette-card { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
         .date { font-size: 0.8rem; color: #888; }
-        .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; }
-        .btn-delete:hover { background-color: #ff1a1a; }
-        .hidden { display: none !important; }
-        .toggle-link { text-align: center; color: #0066cc; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
-    <h1>Le Carnet de Recettes Familial</h1>
+    <h1>Le Carnet de Recettes en Ligne</h1>
+    
+    <form id="recipeForm">
+        <h3>Partager une vraie recette</h3>
+        <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Gratin de courgettes)" required>
+        <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="4" required></textarea>
+        <button type="submit">Enregistrer définitivement</button>
+    </form>
 
-    <div id="authSection" class="auth-box">
-        <h2 id="authTitle">Connexion</h2>
-        <form id="authForm">
-            <input type="email" id="authEmail" placeholder="Votre adresse email" required>
-            <input type="password" id="authPassword" placeholder="Votre mot de passe (6 caractères min.)" required>
-            
-            <input type="text" id="familyCode" placeholder="Code Secret de la Famille" class="hidden">
-            
-            <button type="submit" id="authBtn">Se connecter</button>
-        </form>
-        <div id="toggleAuthMode" class="toggle-link">Pas encore de compte ? S'inscrire</div>
-    </div>
-
-    <div id="privateSection" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <span id="userGreeting" style="font-weight: bold; color: #555;"></span>
-            <button id="logoutBtn" style="width: auto; background-color: #888; margin: 0; padding: 5px 10px;">Déconnexion</button>
-        </div>
-
-        <form id="recipeForm">
-            <h3>Partager une vraie recette</h3>
-            <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Gratin de courgettes)" required>
-            <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="4" required></textarea>
-            <button type="submit">Enregistrer définitivement</button>
-        </form>
-
-        <h2>Les Recettes enregistrées</h2>
-        <div id="recipesContainer">
-            <p id="loadingMessage">Chargement des recettes...</p>
-        </div>
+    <h2>Les Recettes enregistrées</h2>
+    <div id="recipesContainer">
+        <p id="loadingMessage">Chargement des recettes depuis la base de données...</p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // CONFIGURATION SUPABASE
+        // CONFIGURATION SUPABASE : Remplacez les valeurs ci-dessous
         const SUPABASE_URL = "https://hyodxzldfnzgsicsfcsp.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5b2R4emxkZm56Z3NpY3NmY3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTMxNDMsImV4cCI6MjA5Nzk2OTE0M30.HkbfxkMG9j5NHFoQcZMavB4XFibRCYDGRt0IxkSsCH0";
-        
-        // LE CODE SECRET DE LA FAMILLE (À MODIFIER ICI)
-        const CODE_SECRET_FAMILLE = "RECULE2026"; 
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialisation de la connexion avec Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Éléments HTML
-        const authSection = document.getElementById('authSection');
-        const privateSection = document.getElementById('privateSection');
-        const authForm = document.getElementById('authForm');
-        const authTitle = document.getElementById('authTitle');
-        const authBtn = document.getElementById('authBtn');
-        const toggleAuthMode = document.getElementById('toggleAuthMode');
-        const familyCodeInput = document.getElementById('familyCode');
-        const userGreeting = document.getElementById('userGreeting');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const recipeForm = document.getElementById('recipeForm');
+        const form = document.getElementById('recipeForm');
         const container = document.getElementById('recipesContainer');
+        const loadingMessage = document.getElementById('loadingMessage');
 
-        let isLoginMode = true; // Mode par défaut
-
-        // Gérer la bascule entre Connexion et Inscription
-        toggleAuthMode.addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            if (isLoginMode) {
-                authTitle.innerText = "Connexion";
-                authBtn.innerText = "Se connecter";
-                toggleAuthMode.innerText = "Pas encore de compte ? S'inscrire";
-                familyCodeInput.classList.add('hidden');
-                familyCodeInput.removeAttribute('required');
-            } else {
-                authTitle.innerText = "Inscription Familiale";
-                authBtn.innerText = "Créer mon compte";
-                toggleAuthMode.innerText = "Déjà inscrit ? Se connecter";
-                familyCodeInput.classList.remove('hidden');
-                familyCodeInput.setAttribute('required', 'true');
-            }
-        });
-
-        // Gérer la soumission du formulaire d'authentification
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-
-            if (isLoginMode) {
-                // MODE CONNEXION
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (error) alert("Erreur de connexion : " + error.message);
-            } else {
-                // MODE INSCRIPTION : Vérification du code secret d'abord
-                const userCode = familyCodeInput.value;
-                if (userCode !== CODE_SECRET_FAMILLE) {
-                    alert("Code secret de famille incorrect. Inscription refusée.");
-                    return;
-                }
-                
-                const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                if (error) {
-                    alert("Erreur d'inscription : " + error.message);
-                } else {
-                    alert("Compte créé avec succès ! Vous êtes connecté.");
-                }
-            }
-        });
-
-        // Écouter les changements d'état de connexion (Supabase gère la session)
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                // Utilisateur connecté
-                authSection.classList.add('hidden');
-                privateSection.classList.remove('hidden');
-                userGreeting.innerText = "Bonjour, " + session.user.email;
-                authForm.reset();
-                loadRecipes();
-            } else {
-                // Utilisateur déconnecté
-                authSection.classList.remove('hidden');
-                privateSection.classList.add('hidden');
-                container.innerHTML = "";
-            }
-        });
-
-        // Bouton Déconnexion
-        logoutBtn.addEventListener('click', async () => {
-            await supabaseClient.auth.signOut();
-        });
-
-        // FONCTION : CHARGER LES RECETTES
+        // 1. FONCTION POUR CHARGER LES RECETTES DEPUIS LA BASE DE DONNÉES
         async function loadRecipes() {
-            const { data, error } = await supabaseClient
+            // Demander à Supabase toutes les lignes de la table "recipes"
+            const { data, error } = await supabase
                 .from('recipes')
                 .select('*')
                 .order('created_at', { ascending: false });
 
             if (error) {
-                container.innerHTML = "<p>Erreur lors du chargement des recettes.</p>";
+                console.error("Erreur de chargement :", error);
+                loadingMessage.innerText = "Impossible de charger les recettes.";
                 return;
             }
 
+            // Effacer le message de chargement
             container.innerHTML = "";
-            if (!data || data.length === 0) {
-                container.innerHTML = "<p>Aucune recette pour le moment.</p>";
+
+            if (data.length === 0) {
+                container.innerHTML = "<p>Aucune recette dans la base de données pour le moment.</p>";
                 return;
             }
 
+            // Afficher chaque recette récupérée
             data.forEach(recipe => {
-                const dateTexte = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : "Date inconnue";
+                const date = new Date(recipe.created_at).toLocaleDateString('fr-FR');
                 const recipeCard = document.createElement('div');
                 recipeCard.className = 'recette-card';
                 recipeCard.innerHTML = `
                     <h3>${recipe.title}</h3>
-                    <p class="date">Ajouté le ${dateTexte}</p>
+                    <p class="date">Ajouté le ${date}</p>
                     <p style="white-space: pre-line;">${recipe.content}</p>
-                    <button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>
                 `;
                 container.appendChild(recipeCard);
             });
         }
 
-        // FONCTION : SUPPRIMER UNE RECETTE
-        async function deleteRecipe(recipeTitle) {
-            if (!confirm(`Voulez-vous vraiment supprimer "${recipeTitle}" ?`)) return;
+        // 2. ÉCOUTER LA SOUMISSION DU FORMULAIRE POUR SAUVEGARDER
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
 
-            const { error } = await supabaseClient
-                .from('recipes')
-                .delete()
-                .eq('title', recipeTitle);
-
-            if (error) alert("Erreur : " + error.message);
-            else loadRecipes();
-        }
-
-        // FORMULAIRE : AJOUTER UNE RECETTE
-        recipeForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
             const title = document.getElementById('recipeTitle').value;
             const content = document.getElementById('recipeContent').value;
 
-            const { error } = await supabaseClient
+            // Envoyer la nouvelle recette à Supabase
+            const { error } = await supabase
                 .from('recipes')
-                .insert([{ title, content }]);
+                .insert([{ title: title, content: content }]);
 
-            if (error) alert("Erreur d'enregistrement : " + error.message);
-            else {
-                recipeForm.reset();
+            if (error) {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+            } else {
+                form.reset();
+                // Recharger la liste pour afficher la nouvelle recette
                 loadRecipes();
             }
         });
+
+        // Charger les recettes automatiquement dès que la page s'ouvre
+        loadRecipes();
     </script>
 </body>
 </html>
