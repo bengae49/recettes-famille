@@ -19,7 +19,7 @@
         .hidden { display: none !important; }
         .toggle-link { text-align: center; color: #0066cc; cursor: pointer; margin-top: 15px; font-size: 0.9rem; text-decoration: underline; }
 
-        /* --- INTERFACE EN 3 COLONNES (STRUCTURE DU DESSIN) --- */
+        /* --- INTERFACE EN 3 COLONNES (PAGE PRINCIPALE ACCUEIL) --- */
         .app-container { 
             display: grid; 
             grid-template-columns: 220px 1fr 220px; 
@@ -52,11 +52,21 @@
             color: #ffffff; 
         }
 
-        /* Colonne Centrale : Contenu et Recettes */
+        /* Colonne Centrale : Contenu */
         .main-content { 
             display: flex;
             flex-direction: column;
         }
+        
+        /* ZONE PLEIN ÉCRAN (Pour Profil, Ajouter, Toutes les recettes, Détail) */
+        .full-page-focus {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
         .page-content {
             width: 100%;
         }
@@ -77,7 +87,9 @@
         .date { font-size: 0.85rem; color: #555; margin: 0 0 10px 0; }
         .btn-delete { position: absolute; top: 25px; right: 25px; background-color: #ff4d4d; color: white; border: 2px solid #000000; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; }
         .recette-img { width: 100%; max-height: 250px; object-fit: cover; border: 3px solid #000000; margin-top: 15px; }
-        .btn-back { width: auto; background-color: #ffffff; color: #000; border: 3px solid #000; margin-bottom: 20px; padding: 8px 15px; font-weight: bold; }
+        
+        /* Bouton Retour stylisé */
+        .btn-back { width: auto; background-color: #ffffff; color: #000; border: 4px solid #000; margin-bottom: 30px; padding: 10px 20px; font-weight: bold; cursor: pointer; font-size: 1rem; }
         .btn-back:hover { background: #000; color: #fff; }
 
         /* Colonne Droite : Grand rectangle vertical des Contributeurs */
@@ -97,16 +109,19 @@
         .contributors-box h3 { font-size: 1.5rem; font-weight: bold; margin-top: 10px; text-align: center; width: 100%; }
         .contributors-placeholder { color: #555; font-size: 0.95rem; text-align: center; margin-top: 50px; line-height: 1.4; }
 
-        /* Responsive : s'adapte si l'écran devient trop petit */
+        /* Responsive */
         @media (max-width: 900px) {
             .app-container { grid-template-columns: 1fr; gap: 20px; }
+            .sidebar-left { order: 1; }
+            .main-content { order: 2; }
+            .sidebar-right { order: 3; }
             .contributors-box { min-height: 200px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="site-title">Bienvenue sur le site des recettes ultimes</div>
+    <div id="siteTitle" class="site-title">Bienvenue sur le site des recettes ultimes</div>
 
     <div id="page-auth" class="auth-box">
         <h2 style="text-align: center; margin-top: 0;">Connexion</h2>
@@ -119,23 +134,36 @@
         <div id="toggleAuthMode" class="toggle-link">Pas encore de compte ? S'inscrire</div>
     </div>
 
-    <div id="privateZone" class="app-container hidden">
+    <div id="privateZone" class="hidden">
+        
+        <div id="layout-3-colonnes" class="app-container">
+            <aside class="sidebar-left">
+                <button class="btn-nav" onclick="showPage('page-profil')">Profil</button>
+                <button class="btn-nav" onclick="showPage('page-ajouter')">Ajouter une recette</button>
+                <button class="btn-nav" onclick="showPage('page-recherche')">Accéder aux recettes</button>
+            </aside>
 
-        <aside class="sidebar-left">
-            <button class="btn-nav" id="nav-page-profil" onclick="showPage('page-profil')">Profil</button>
-            <button class="btn-nav" id="nav-page-ajouter" onclick="showPage('page-ajouter')">Ajouter une recette</button>
-            <button class="btn-nav" id="nav-page-recherche" onclick="showPage('page-recherche')">Accéder aux recettes</button>
-        </aside>
+            <main class="main-content">
+                <div id="page-accueil" class="page-content">
+                    <div class="section-title">Derniers ajouts</div>
+                    <div id="recipesContainer" class="recipes-list"><p>Chargement des recettes ultimes...</p></div>
+                </div>
+            </main>
 
-        <main class="main-content">
+            <aside class="sidebar-right">
+                <div class="contributors-box">
+                    <h3>Contributeurs</h3>
+                    <div class="contributors-placeholder">
+                        Affichage des membres de la famille et statistiques de cuisine bientôt disponibles.
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div id="layout-focus" class="full-page-focus hidden">
             
-            <div id="page-accueil" class="page-content">
-                <div class="section-title">Derniers ajouts</div>
-                <div id="recipesContainer" class="recipes-list"><p>Chargement des recettes ultimes...</p></div>
-            </div>
-
             <div id="page-ajouter" class="page-content hidden">
-                <button class="btn-back" onclick="showPage('page-accueil')">← Retour</button>
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
                 <div class="section-title">Partager une recette</div>
                 <form id="recipeForm">
                     <input type="text" id="recipeTitle" placeholder="Nom du plat" required>
@@ -147,34 +175,25 @@
             </div>
 
             <div id="page-recherche" class="page-content hidden">
-                <button class="btn-back" onclick="showPage('page-accueil')">← Retour</button>
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
                 <div class="section-title">Toutes les recettes</div>
                 <input type="text" id="searchBar" placeholder="Rechercher par ingrédient ou par titre..." oninput="filterRecipes()">
                 <div id="searchResults" class="recipes-list"></div>
             </div>
 
             <div id="page-profil" class="page-content hidden">
-                <button class="btn-back" onclick="showPage('page-accueil')">← Retour</button>
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
                 <div class="section-title">Mon Profil Familial</div>
                 <p style="text-align: center; margin: 30px 0; font-size: 1.1rem;" id="userEmailDisplay"></p>
-                <button id="logoutBtn" style="background-color: #ffffff; color: red; border-color: red;">Se déconnecter</button>
+                <button id="logoutBtn" style="background-color: #ffffff; color: red; border-color: red;">Se déconnecter du carnet</button>
             </div>
 
             <div id="page-detail" class="page-content hidden">
-                <button class="btn-back" onclick="showPage('page-accueil')">← Retour</button>
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
                 <div id="singleRecipeContent"></div>
             </div>
 
-        </main>
-
-        <aside class="sidebar-right">
-            <div class="contributors-box">
-                <h3>Contributeurs</h3>
-                <div class="contributors-placeholder">
-                    Affichage des membres de la famille et statistiques de cuisine bientôt disponibles.
-                </div>
-            </div>
-        </aside>
+        </div>
 
     </div>
 
@@ -188,16 +207,24 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let localRecipesCache = [];
 
+        // NOUVELLE LOGIQUE DE NAVIGATION : Alterne entre les deux structures de mise en page
         function showPage(pageId) {
+            // Ferme tous les onglets de contenu internes
             document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
-            document.getElementById(pageId).classList.remove('hidden');
-
-            document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
-            const activeBtn = document.getElementById('nav-' + pageId);
-            if (activeBtn) activeBtn.classList.add('active');
-
+            
             if (pageId === 'page-accueil') {
+                // Affiche le layout en 3 colonnes, cache la zone plein écran
+                document.getElementById('layout-focus').classList.add('hidden');
+                document.getElementById('layout-3-colonnes').classList.remove('hidden');
+                document.getElementById('siteTitle').classList.remove('hidden'); // Garde le titre en haut de l'accueil
+                document.getElementById('page-accueil').classList.remove('hidden');
                 loadRecipes();
+            } else {
+                // Cache le layout complet à 3 colonnes, ouvre la zone plein écran épurée
+                document.getElementById('layout-3-colonnes').classList.add('hidden');
+                document.getElementById('siteTitle').classList.add('hidden'); // Masque le gros titre pour laisser place au sujet
+                document.getElementById('layout-focus').classList.remove('hidden');
+                document.getElementById(pageId).classList.remove('hidden');
             }
         }
 
@@ -292,12 +319,12 @@
 
         function showSingleRecipe(recipe) {
             showPage('page-detail');
-            let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img" style="max-height:400px; width:auto; display:block; margin: 15px auto 0 auto;">` : "";
+            let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img" style="max-height:450px; width:auto; display:block; margin: 20px auto 0 auto;">` : "";
             document.getElementById('singleRecipeContent').innerHTML = `
-                <h2 style="text-align:left; margin-bottom:5px; font-size:1.6rem;">${recipe.title}</h2>
+                <h2 style="text-align:left; margin-bottom:5px; font-size:1.8rem;">${recipe.title}</h2>
                 <div class="date">Date d'insertion : ${recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : 'Inconnue'}</div>
-                <hr style="border:0; border-top:3px solid #000; margin:15px 0;">
-                <p style="white-space: pre-line; font-size:1.1rem; line-height:1.6; background:#f9f9f9; padding:20px; border:2px solid #000;">${recipe.content}</p>
+                <hr style="border:0; border-top:4px solid #000; margin:15px 0;">
+                <p style="white-space: pre-line; font-size:1.15rem; line-height:1.6; background:#f9f9f9; padding:25px; border:3px solid #000;">${recipe.content}</p>
                 ${imgHtml}
             `;
         }
@@ -334,14 +361,12 @@
                         uploadedImageUrl = data.publicUrl;
                     }
                 } catch(err) {
-                    console.log("Erreur d'upload ignorée");
+                    console.log("Erreur stockage");
                 }
             }
 
-            // Envoi à la table SQL
             const { error } = await supabaseClient.from('recipes').insert([{ title, content, image_url: uploadedImageUrl }]);
             if (error) {
-                // Secours au cas où image_url n'existe pas en colonne SQL
                 const { error: retryError } = await supabaseClient.from('recipes').insert([{ title, content }]);
                 if (retryError) alert(retryError.message);
                 else {
