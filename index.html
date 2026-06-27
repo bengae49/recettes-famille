@@ -5,29 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Le Carnet de Recettes Familial</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
-        h1, h2 { color: #333; text-align: center; }
-        form, .auth-box, .page-content { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        /* Réinitialisation de base pour occuper tout l'écran */
+        html, body { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: #f9f9f9; }
+        body { font-family: Arial, sans-serif; box-sizing: border-box; padding: 20px; }
+        
+        h1, h2 { color: #333; text-align: center; margin-top: 10px; }
+        
+        /* Conteneurs fluides prenant toute la largeur disponible */
+        form, .auth-box, .page-content { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Centrage spécifique pour la boîte de connexion au milieu de l'écran */
+        .auth-box { max-width: 500px; margin: 60px auto; }
+
+        input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
         button { background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #45a049; }
         
-        /* Menu d'actions sur la page principale */
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .btn-menu { background-color: #333; padding: 12px; font-size: 0.9rem; margin: 0; }
+        /* Menu d'actions adaptatif */
+        .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .btn-menu { background-color: #333; padding: 14px; font-size: 0.95rem; margin: 0; }
         .btn-menu:hover { background-color: #555; }
         
-        /* Boutons de retour en haut des sous-pages */
+        /* Boutons de retour */
         .btn-back { width: auto; background-color: #888; margin-bottom: 15px; padding: 8px 15px; }
         .btn-back:hover { background-color: #666; }
 
-        .recette-card { position: relative; background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; cursor: pointer; }
-        .date { font-size: 0.8rem; color: #888; }
-        .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; }
-        .recette-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 6px; margin-top: 10px; }
+        /* GRILLE DE RECETTES REPSONSIVE : s'adapte à la taille de l'écran */
+        .recipes-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin-top: 15px; 
+        }
+
+        .recette-card { 
+            position: relative; 
+            background: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            border-left: 5px solid #4CAF50; 
+            cursor: pointer; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .recette-card h3 { margin-top: 0; margin-right: 80px; font-size: 1.2rem; color: #222; }
+        .date { font-size: 0.8rem; color: #888; margin: 5px 0 10px 0; }
         
+        .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; }
+        .recette-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 6px; margin-top: auto; padding-top: 10px; }
+        
+        /* Conteneur de page de détail centré et lisible sur grand écran */
+        #page-detail { max-width: 800px; margin: 0 auto; }
+
         .hidden { display: none !important; }
         .toggle-link { text-align: center; color: #0066cc; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
+
+        /* Ajustements pour les petits écrans (smartphones) */
+        @media (max-width: 500px) {
+            .menu-grid { grid-template-columns: 1fr; gap: 5px; }
+            body { padding: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -49,13 +97,13 @@
 
         <div id="page-accueil" class="page-content">
             <div class="menu-grid">
-                <button class="btn-menu" onclick="showPage('page-ajouter')">➕ Ajouter</button>
+                <button class="btn-menu" onclick="showPage('page-ajouter')">➕ Ajouter une recette</button>
                 <button class="btn-menu" onclick="showPage('page-recherche')">🔍 Rechercher</button>
                 <button class="btn-menu" onclick="showPage('page-profil')">👤 Mon Profil</button>
             </div>
             
             <h2>Toutes les Recettes</h2>
-            <div id="recipesContainer"><p>Chargement...</p></div>
+            <div id="recipesContainer" class="recipes-grid"><p>Chargement...</p></div>
         </div>
 
         <div id="page-ajouter" class="page-content hidden">
@@ -63,7 +111,7 @@
             <h2>Partager une recette</h2>
             <form id="recipeForm">
                 <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Crêpes de Grand-Mère)" required>
-                <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="6" required></textarea>
+                <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="8" required></textarea>
                 <label style="font-size: 0.9rem; color: #555; font-weight: bold;">Photo de la recette :</label>
                 <input type="file" id="recipeImage" accept="image/*">
                 <button type="submit">Enregistrer la recette</button>
@@ -74,181 +122,5 @@
             <button class="btn-back" onclick="showPage('page-accueil')">← Retour Accueil</button>
             <h2>Rechercher une recette</h2>
             <input type="text" id="searchBar" placeholder="Tapez un ingrédient ou un nom de plat..." oninput="filterRecipes()">
-            <div id="searchResults"></div>
+            <div id="searchResults" class="recipes-grid"></div>
         </div>
-
-        <div id="page-profil" class="page-content hidden">
-            <button class="btn-back" onclick="showPage('page-accueil')">← Retour Accueil</button>
-            <h2>Mon Profil Familial</h2>
-            <p style="text-align: center; margin: 20px 0;" id="userEmailDisplay"></p>
-            <button id="logoutBtn" style="background-color: #888;">Se déconnecter du carnet</button>
-        </div>
-
-        <div id="page-detail" class="page-content hidden">
-            <button class="btn-back" onclick="showPage('page-accueil')">← Retour</button>
-            <div id="singleRecipeContent"></div>
-        </div>
-
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <script>
-        const SUPABASE_URL = "https://hyodxzldfnzgsicsfcsp.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5b2R4emxkZm56Z3NpY3NmY3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTMxNDMsImV4cCI6MjA5Nzk2OTE0M30.HkbfxkMG9j5NHFoQcZMavB4XFibRCYDGRt0IxkSsCH0";
-        const CODE_SECRET_FAMILLE = "DURAND2026"; 
-
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let localRecipesCache = [];
-
-        // Fonction de navigation simplifiée
-        function showPage(pageId) {
-            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
-            document.getElementById(pageId).classList.remove('hidden');
-
-            if (pageId === 'page-accueil') {
-                loadRecipes();
-            }
-        }
-
-        // --- AUTHENTIFICATION ---
-        const authForm = document.getElementById('authForm');
-        const toggleAuthMode = document.getElementById('toggleAuthMode');
-        const familyCodeInput = document.getElementById('familyCode');
-        let isLoginMode = true;
-
-        toggleAuthMode.addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            if (isLoginMode) {
-                document.querySelector('#page-auth h2').innerText = "Connexion";
-                document.getElementById('authBtn').innerText = "Se connecter";
-                toggleAuthMode.innerText = "Pas encore de compte ? S'inscrire";
-                familyCodeInput.classList.add('hidden');
-            } else {
-                document.querySelector('#page-auth h2').innerText = "Inscription Familiale";
-                document.getElementById('authBtn').innerText = "Créer mon compte";
-                toggleAuthMode.innerText = "Déjà inscrit ? Se connecter";
-                familyCodeInput.classList.remove('hidden');
-            }
-        });
-
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-
-            if (isLoginMode) {
-                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (error) alert(error.message);
-            } else {
-                if (familyCodeInput.value !== CODE_SECRET_FAMILLE) {
-                    alert("Code de famille invalide.");
-                    return;
-                }
-                const { error } = await supabaseClient.auth.signUp({ email, password });
-                if (error) alert(error.message);
-            }
-        });
-
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                document.getElementById('page-auth').classList.add('hidden');
-                document.getElementById('privateZone').classList.remove('hidden');
-                document.getElementById('userEmailDisplay').innerText = "Email du compte : " + session.user.email;
-                showPage('page-accueil');
-            } else {
-                document.getElementById('page-auth').classList.remove('hidden');
-                document.getElementById('privateZone').classList.add('hidden');
-            }
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', () => supabaseClient.auth.signOut());
-
-        // --- LOGIQUE DES RECETTES ---
-        async function loadRecipes() {
-            const { data, error } = await supabaseClient.from('recipes').select('*').order('created_at', { ascending: false });
-            if (error) return;
-            
-            localRecipesCache = data;
-            renderRecipeList(data, document.getElementById('recipesContainer'));
-        }
-
-        function renderRecipeList(recipes, targetContainer) {
-            targetContainer.innerHTML = "";
-            if (recipes.length === 0) {
-                targetContainer.innerHTML = "<p style='text-align:center; color:#888;'>Aucune recette pour le moment.</p>";
-                return;
-            }
-
-            recipes.forEach(recipe => {
-                const card = document.createElement('div');
-                card.className = 'recette-card';
-                card.onclick = (e) => {
-                    if(e.target.tagName !== 'BUTTON') showSingleRecipe(recipe);
-                };
-
-                let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img">` : "";
-                
-                card.innerHTML = `
-                    <h3>${recipe.title}</h3>
-                    <p class="date">Ajouté le ${new Date(recipe.created_at).toLocaleDateString('fr-FR')}</p>
-                    ${imgHtml}
-                    <button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>
-                `;
-                targetContainer.appendChild(card);
-            });
-        }
-
-        function showSingleRecipe(recipe) {
-            showPage('page-detail');
-            let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img" style="max-height:400px;">` : "";
-            document.getElementById('singleRecipeContent').innerHTML = `
-                <h2 style="margin-top:15px;">${recipe.title}</h2>
-                <p class="date" style="text-align:center;">Date d'ajout : ${new Date(recipe.created_at).toLocaleDateString('fr-FR')}</p>
-                <hr>
-                <p style="white-space: pre-line; font-size:1.1rem; line-height:1.6; background:#f5f5f5; padding:15px; border-radius:6px; margin-bottom:15px;">${recipe.content}</p>
-                ${imgHtml}
-            `;
-        }
-
-        function filterRecipes() {
-            const query = document.getElementById('searchBar').value.toLowerCase();
-            const filtered = localRecipesCache.filter(r => 
-                r.title.toLowerCase().includes(query) || r.content.toLowerCase().includes(query)
-            );
-            renderRecipeList(filtered, document.getElementById('searchResults'));
-        }
-
-        async function deleteRecipe(title) {
-            if (!confirm(`Supprimer "${title}" ?`)) return;
-            await supabaseClient.from('recipes').delete().eq('title', title);
-            loadRecipes();
-            showPage('page-accueil');
-        }
-
-        document.getElementById('recipeForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const title = document.getElementById('recipeTitle').value;
-            const content = document.getElementById('recipeContent').value;
-            const imageFile = document.getElementById('recipeImage').files[0];
-            let uploadedImageUrl = null;
-
-            if (imageFile) {
-                const fileName = `${Date.now()}_${imageFile.name}`;
-                const { error: upError } = await supabaseClient.storage.from('recipe-images').upload(fileName, imageFile);
-                if (!upError) {
-                    const { data } = supabaseClient.storage.from('recipe-images').getPublicUrl(fileName);
-                    uploadedImageUrl = data.publicUrl;
-                }
-            }
-
-            const { error } = await supabaseClient.from('recipes').insert([{ title, content, image_url: uploadedImageUrl }]);
-            if (error) alert(error.message);
-            else {
-                document.getElementById('recipeForm').reset();
-                showPage('page-accueil');
-            }
-        });
-    </script>
-</body>
-</html>
