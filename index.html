@@ -155,7 +155,6 @@
             data.forEach(recipe => {
                 const dateTexte = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : "Date inconnue";
                 
-                // Vérifier si une image existe pour cette recette
                 let imageHtml = "";
                 if (recipe.image_url) {
                     imageHtml = `<img src="${recipe.image_url}" class="recette-img" alt="${recipe.title}">`;
@@ -192,22 +191,22 @@
             
             let uploadedImageUrl = null;
 
-            // 1. Si l'utilisateur a sélectionné une image, on l'envoie dans le Bucket
+            // 1. Envoi de l'image si elle existe
             if (imageFile) {
-                // On crée un nom de fichier unique (ex: 171824399_mon-gateau.jpg)
                 const fileName = `${Date.now()}_${imageFile.name}`;
                 
+                // Ligne corrigée ici : suppression du ".style ="
                 const { data: uploadData, error: uploadError } = await supabaseClient
-                    .style = await supabaseClient.storage
+                    .storage
                     .from('recipe-images')
                     .upload(fileName, imageFile);
 
                 if (uploadError) {
                     alert("Erreur lors de l'envoi de l'image : " + uploadError.message);
-                    return; // On arrête tout si l'image plante
+                    return;
                 }
 
-                // Récupérer l'URL publique générée par Supabase
+                // Récupération de l'URL publique
                 const { data: linkData } = supabaseClient
                     .storage
                     .from('recipe-images')
@@ -216,7 +215,7 @@
                 uploadedImageUrl = linkData.publicUrl;
             }
 
-            // 2. Insérer la recette dans la table avec l'URL de l'image
+            // 2. Insertion en base
             const { error } = await supabaseClient
                 .from('recipes')
                 .insert([{ title, content, image_url: uploadedImageUrl }]);
