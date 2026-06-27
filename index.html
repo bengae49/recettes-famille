@@ -83,9 +83,18 @@
             box-sizing: border-box;
             min-height: 120px;
         }
-        .recette-card h3 { margin: 0 100px 5px 0; font-size: 1.4rem; font-weight: bold; }
-        .date { font-size: 0.85rem; color: #555; margin: 0 0 10px 0; }
-        .btn-delete { position: absolute; top: 25px; right: 25px; background-color: #ff4d4d; color: white; border: 2px solid #000000; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; }
+        .recette-card h3 { margin: 0 120px 5px 0; font-size: 1.4rem; font-weight: bold; }
+        
+        /* Affichage de l'auteur */
+        .meta-info { font-size: 0.85rem; color: #555; margin: 0 0 10px 0; }
+        .author-tag { font-weight: bold; color: #000000; background-color: #f0f0f0; padding: 2px 6px; border: 1px solid #000; }
+
+        .btn-delete { position: absolute; top: 25px; right: 25px; background-color: #ff4d4d; color: white; border: 2px solid #000000; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; font-weight: bold; }
+        .btn-delete:hover { background-color: #cc0000; }
+        
+        .btn-edit { background-color: #ffffff; color: #000000; border: 3px solid #000000; padding: 10px 15px; cursor: pointer; font-size: 1rem; width: auto; font-weight: bold; margin-top: 15px; }
+        .btn-edit:hover { background-color: #000000; color: #ffffff; }
+
         .recette-img { width: 100%; max-height: 250px; object-fit: cover; border: 3px solid #000000; margin-top: 15px; }
         
         /* Bouton Retour stylisé */
@@ -177,7 +186,7 @@
             <div id="page-recherche" class="page-content hidden">
                 <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
                 <div class="section-title">Toutes les recettes</div>
-                <input type="text" id="searchBar" placeholder="Rechercher par ingrédient ou par titre..." oninput="filterRecipes()">
+                <input type="text" id="searchBar" placeholder="Rechercher par ingrédient, titre ou auteur..." oninput="filterRecipes()">
                 <div id="searchResults" class="recipes-list"></div>
             </div>
 
@@ -206,23 +215,20 @@
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let localRecipesCache = [];
+        let currentUserEmail = "";
 
-        // NOUVELLE LOGIQUE DE NAVIGATION : Alterne entre les deux structures de mise en page
         function showPage(pageId) {
-            // Ferme tous les onglets de contenu internes
             document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
             
             if (pageId === 'page-accueil') {
-                // Affiche le layout en 3 colonnes, cache la zone plein écran
                 document.getElementById('layout-focus').classList.add('hidden');
                 document.getElementById('layout-3-colonnes').classList.remove('hidden');
-                document.getElementById('siteTitle').classList.remove('hidden'); // Garde le titre en haut de l'accueil
+                document.getElementById('siteTitle').classList.remove('hidden'); 
                 document.getElementById('page-accueil').classList.remove('hidden');
                 loadRecipes();
             } else {
-                // Cache le layout complet à 3 colonnes, ouvre la zone plein écran épurée
                 document.getElementById('layout-3-colonnes').classList.add('hidden');
-                document.getElementById('siteTitle').classList.add('hidden'); // Masque le gros titre pour laisser place au sujet
+                document.getElementById('siteTitle').classList.add('hidden'); 
                 document.getElementById('layout-focus').classList.remove('hidden');
                 document.getElementById(pageId).classList.remove('hidden');
             }
@@ -269,11 +275,13 @@
 
         supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) {
+                currentUserEmail = session.user.email;
                 document.getElementById('page-auth').classList.add('hidden');
                 document.getElementById('privateZone').classList.remove('hidden');
-                document.getElementById('userEmailDisplay').innerText = "Utilisateur connecté : " + session.user.email;
+                document.getElementById('userEmailDisplay').innerText = "Utilisateur connecté : " + currentUserEmail;
                 showPage('page-accueil');
             } else {
+                currentUserEmail = "";
                 document.getElementById('page-auth').classList.remove('hidden');
                 document.getElementById('privateZone').classList.add('hidden');
             }
@@ -305,13 +313,20 @@
                 };
 
                 let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img">` : "";
+                const author = recipe.author ? recipe.author : "Anonyme";
+                
+                // N'affiche le bouton Supprimer que si l'utilisateur en est l'auteur
+                let deleteBtnHtml = "";
+                if (currentUserEmail && author === currentUserEmail) {
+                    deleteBtnHtml = `<button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>`;
+                }
                 
                 card.innerHTML = `
                     <h3>${recipe.title}</h3>
-                    <div class="date">Ajouté le ${recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}</div>
+                    <div class="meta-info">Par <span class="author-tag">${author}</span> • Le ${recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}</div>
                     <p style="white-space: pre-line; margin: 5px 0; color:#333;">${recipe.content ? recipe.content.substring(0, 140) + '...' : ''}</p>
                     ${imgHtml}
-                    <button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>
+                    ${deleteBtnHtml}
                 `;
                 targetContainer.appendChild(card);
             });
@@ -320,20 +335,80 @@
         function showSingleRecipe(recipe) {
             showPage('page-detail');
             let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img" style="max-height:450px; width:auto; display:block; margin: 20px auto 0 auto;">` : "";
+            const author = recipe.author ? recipe.author : "Anonyme";
+            
+            let actionButtonsHtml = "";
+            // N'autorise la modification et la suppression que si l'utilisateur est l'auteur
+            if (currentUserEmail && author === currentUserEmail) {
+                actionButtonsHtml = `
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button class="btn-edit" onclick="enableRecipeEdit(\`${recipe.title}\`)">✏️ Modifier la recette</button>
+                    </div>
+                `;
+            }
+
             document.getElementById('singleRecipeContent').innerHTML = `
-                <h2 style="text-align:left; margin-bottom:5px; font-size:1.8rem;">${recipe.title}</h2>
-                <div class="date">Date d'insertion : ${recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : 'Inconnue'}</div>
-                <hr style="border:0; border-top:4px solid #000; margin:15px 0;">
-                <p style="white-space: pre-line; font-size:1.15rem; line-height:1.6; background:#f9f9f9; padding:25px; border:3px solid #000;">${recipe.content}</p>
-                ${imgHtml}
+                <div id="recipe-view-mode">
+                    <h2 id="view-title" style="text-align:left; margin-bottom:5px; font-size:1.8rem;">${recipe.title}</h2>
+                    <div class="meta-info" style="font-size:1rem; margin-bottom:15px;">Proposée par <span class="author-tag">${author}</span> • Ajoutée le ${recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : 'Inconnue'}</div>
+                    <hr style="border:0; border-top:4px solid #000; margin:15px 0;">
+                    <p id="view-content" style="white-space: pre-line; font-size:1.15rem; line-height:1.6; background:#f9f9f9; padding:25px; border:3px solid #000;">${recipe.content}</p>
+                    ${imgHtml}
+                    ${actionButtonsHtml}
+                </div>
+                <div id="recipe-edit-mode" class="hidden">
+                    <div class="section-title">Modifier votre recette</div>
+                    <input type="text" id="editRecipeTitle" value="${recipe.title}" required>
+                    <textarea id="editRecipeContent" rows="10" required>${recipe.content}</textarea>
+                    <div style="display:flex; gap:15px;">
+                        <button onclick="saveRecipeEdit(\`${recipe.title}\`)" style="background:#000; color:#fff;">Enregistrer les modifications</button>
+                        <button onclick="cancelRecipeEdit()" style="background:#fff; color:#000;">Annuler</button>
+                    </div>
+                </div>
             `;
+        }
+
+        // Passer en mode édition
+        function enableRecipeEdit() {
+            document.getElementById('recipe-view-mode').classList.add('hidden');
+            document.getElementById('recipe-edit-mode').classList.remove('hidden');
+        }
+
+        // Annuler l'édition
+        function cancelRecipeEdit() {
+            document.getElementById('recipe-edit-mode').classList.add('hidden');
+            document.getElementById('recipe-view-mode').classList.remove('hidden');
+        }
+
+        // Sauvegarder la modification dans Supabase
+        async function saveRecipeEdit(oldTitle) {
+            const newTitle = document.getElementById('editRecipeTitle').value;
+            const newContent = document.getElementById('editRecipeContent').value;
+
+            if(!newTitle || !newContent) {
+                alert("Le titre et le contenu ne peuvent pas être vides.");
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('recipes')
+                .update({ title: newTitle, content: newContent })
+                .eq('title', oldTitle);
+
+            if (error) {
+                alert("Erreur lors de la mise à jour : " + error.message);
+            } else {
+                alert("Recette mise à jour avec succès !");
+                showPage('page-accueil');
+            }
         }
 
         function filterRecipes() {
             const query = document.getElementById('searchBar').value.toLowerCase();
             const filtered = localRecipesCache.filter(r => 
                 (r.title && r.title.toLowerCase().includes(query)) || 
-                (r.content && r.content.toLowerCase().includes(query))
+                (r.content && r.content.toLowerCase().includes(query)) ||
+                (r.author && r.author.toLowerCase().includes(query))
             );
             renderRecipeList(filtered, document.getElementById('searchResults'));
         }
@@ -365,9 +440,17 @@
                 }
             }
 
-            const { error } = await supabaseClient.from('recipes').insert([{ title, content, image_url: uploadedImageUrl }]);
+            // Insertion incluant le champ 'author'
+            const { error } = await supabaseClient.from('recipes').insert([{ 
+                title, 
+                content, 
+                image_url: uploadedImageUrl,
+                author: currentUserEmail
+            }]);
+            
             if (error) {
-                const { error: retryError } = await supabaseClient.from('recipes').insert([{ title, content }]);
+                // Fallback si la colonne n'est pas encore créée côté Supabase
+                const { error: retryError } = await supabaseClient.from('recipes').insert([{ title, content, image_url: uploadedImageUrl }]);
                 if (retryError) alert(retryError.message);
                 else {
                     document.getElementById('recipeForm').reset();
