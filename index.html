@@ -3,59 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recettes de Famille - Avec Photos</title>
+    <title>Le Carnet de Recettes Familial</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
-        h1 { color: #333; text-align: center; }
-        form, .auth-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: #333; text-align: center; }
+        form, .auth-box, .page-content { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
         input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #45a049; }
-        .recette-card { position: relative; background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
+        
+        /* Barre de navigation */
+        nav { display: flex; justify-content: space-around; background: #333; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 0.9rem; padding: 5px 10px; border-radius: 4px; }
+        nav a:hover, nav a.active { background: #4CAF50; }
+
+        .recette-card { position: relative; background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; cursor: pointer; }
         .date { font-size: 0.8rem; color: #888; }
         .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; }
-        .btn-delete:hover { background-color: #ff1a1a; }
+        .recette-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 6px; margin-top: 10px; }
+        
+        /* Système d'affichage des pages */
         .hidden { display: none !important; }
         .toggle-link { text-align: center; color: #0066cc; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
-        .recette-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 6px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h1>Le Carnet de Recettes Familial</h1>
+    <h1>Le Carnet Familial</h1>
 
-    <div id="authSection" class="auth-box">
+    <div id="page-auth" class="auth-box">
         <h2 id="authTitle">Connexion</h2>
         <form id="authForm">
             <input type="email" id="authEmail" placeholder="Votre adresse email" required>
-            <input type="password" id="authPassword" placeholder="Votre mot de passe (6 caractères min.)" required>
+            <input type="password" id="authPassword" placeholder="Votre mot de passe" required>
             <input type="text" id="familyCode" placeholder="Code Secret de la Famille" class="hidden">
             <button type="submit" id="authBtn">Se connecter</button>
         </form>
         <div id="toggleAuthMode" class="toggle-link">Pas encore de compte ? S'inscrire</div>
     </div>
 
-    <div id="privateSection" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <span id="userGreeting" style="font-weight: bold; color: #555;"></span>
-            <button id="logoutBtn" style="width: auto; background-color: #888; margin: 0; padding: 5px 10px;">Déconnexion</button>
+    <div id="privateZone" class="hidden">
+        
+        <nav id="navbar">
+            <a onclick="showPage('page-accueil')" id="nav-page-accueil" class="active">Accueil</a>
+            <a onclick="showPage('page-ajouter')" id="nav-page-ajouter">Ajouter</a>
+            <a onclick="showPage('page-recherche')" id="nav-page-recherche">Recherche</a>
+            <a onclick="showPage('page-profil')" id="nav-page-profil">Profil</a>
+        </nav>
+
+        <div id="page-accueil" class="page-content">
+            <h2>Toutes les Recettes</h2>
+            <div id="recipesContainer"><p>Chargement...</p></div>
         </div>
 
-        <form id="recipeForm">
-            <h3>Partager une vraie recette</h3>
-            <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Gratin de courgettes)" required>
-            <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="4" required></textarea>
-            
-            <label style="font-size: 0.9rem; color: #555; font-weight: bold;">Ajouter une photo (optionnel) :</label>
-            <input type="file" id="recipeImage" accept="image/*">
-            
-            <button type="submit">Enregistrer définitivement</button>
-        </form>
-
-        <h2>Les Recettes enregistrées</h2>
-        <div id="recipesContainer">
-            <p id="loadingMessage">Chargement des recettes...</p>
+        <div id="page-ajouter" class="page-content hidden">
+            <h2>Partager une recette</h2>
+            <form id="recipeForm">
+                <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Crêpes de Grand-Mère)" required>
+                <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="6" required></textarea>
+                <label style="font-size: 0.9rem; color: #555; font-weight: bold;">Photo de la recette :</label>
+                <input type="file" id="recipeImage" accept="image/*">
+                <button type="submit">Enregistrer la recette</button>
+            </form>
         </div>
+
+        <div id="page-recherche" class="page-content hidden">
+            <h2>Rechercher une recette</h2>
+            <input type="text" id="searchBar" placeholder="Tapez un ingrédient ou un nom de plat..." oninput="filterRecipes()">
+            <div id="searchResults"></div>
+        </div>
+
+        <div id="page-profil" class="page-content hidden">
+            <h2>Mon Profil Familial</h2>
+            <p style="text-align: center;" id="userEmailDisplay"></p>
+            <button id="logoutBtn" style="background-color: #888;">Se déconnecter du carnet</button>
+        </div>
+
+        <div id="page-detail" class="page-content hidden">
+            <button onclick="showPage('page-accueil')" style="width: auto; background: #888;"><- Retour</button>
+            <div id="singleRecipeContent"></div>
+        </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -66,35 +94,44 @@
         const CODE_SECRET_FAMILLE = "DURAND2026"; 
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let localRecipesCache = []; // Stockage temporaire pour la recherche rapide
 
-        const authSection = document.getElementById('authSection');
-        const privateSection = document.getElementById('privateSection');
+        // Moteur de navigation (Changement d'onglet)
+        function showPage(pageId) {
+            // Masquer toutes les pages
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+            // Désactiver tous les onglets de la navbar
+            document.querySelectorAll('#navbar a').forEach(a => a.classList.remove('active'));
+            
+            // Afficher la page demandée
+            document.getElementById(pageId).classList.remove('hidden');
+            
+            // Activer l'onglet correspondant (si existant)
+            const activeNav = document.getElementById('nav-' + pageId);
+            if (activeNav) activeNav.classList.add('active');
+
+            // Rechargement automatique si retour sur accueil
+            if (pageId === 'page-accueil') loadRecipes();
+        }
+
+        // --- GESTION DE L'AUTHENTIFICATION ---
         const authForm = document.getElementById('authForm');
-        const authTitle = document.getElementById('authTitle');
-        const authBtn = document.getElementById('authBtn');
         const toggleAuthMode = document.getElementById('toggleAuthMode');
         const familyCodeInput = document.getElementById('familyCode');
-        const userGreeting = document.getElementById('userGreeting');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const recipeForm = document.getElementById('recipeForm');
-        const container = document.getElementById('recipesContainer');
-
         let isLoginMode = true;
 
         toggleAuthMode.addEventListener('click', () => {
             isLoginMode = !isLoginMode;
             if (isLoginMode) {
-                authTitle.innerText = "Connexion";
-                authBtn.innerText = "Se connecter";
+                document.getElementById('authTitle').innerText = "Connexion";
+                document.getElementById('authBtn').innerText = "Se connecter";
                 toggleAuthMode.innerText = "Pas encore de compte ? S'inscrire";
                 familyCodeInput.classList.add('hidden');
-                familyCodeInput.removeAttribute('required');
             } else {
-                authTitle.innerText = "Inscription Familiale";
-                authBtn.innerText = "Créer mon compte";
+                document.getElementById('authTitle').innerText = "Inscription Familiale";
+                document.getElementById('authBtn').innerText = "Créer mon compte";
                 toggleAuthMode.innerText = "Déjà inscrit ? Se connecter";
                 familyCodeInput.classList.remove('hidden');
-                familyCodeInput.setAttribute('required', 'true');
             }
         });
 
@@ -104,127 +141,121 @@
             const password = document.getElementById('authPassword').value;
 
             if (isLoginMode) {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (error) alert("Erreur de connexion : " + error.message);
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) alert(error.message);
             } else {
-                const userCode = familyCodeInput.value;
-                if (userCode !== CODE_SECRET_FAMILLE) {
-                    alert("Code secret de famille incorrect. Inscription refusée.");
+                if (familyCodeInput.value !== CODE_SECRET_FAMILLE) {
+                    alert("Code de famille invalide.");
                     return;
                 }
-                const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                if (error) alert("Erreur d'inscription : " + error.message);
+                const { error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) alert(error.message);
             }
         });
 
         supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) {
-                authSection.classList.add('hidden');
-                privateSection.classList.remove('hidden');
-                userGreeting.innerText = "Bonjour, " + session.user.email;
-                loadRecipes();
+                document.getElementById('page-auth').classList.add('hidden');
+                document.getElementById('privateZone').classList.remove('hidden');
+                document.getElementById('userEmailDisplay').innerText = "Connecté en tant que : " + session.user.email;
+                showPage('page-accueil');
             } else {
-                authSection.classList.remove('hidden');
-                privateSection.classList.add('hidden');
-                container.innerHTML = "";
+                document.getElementById('page-auth').classList.remove('hidden');
+                document.getElementById('privateZone').classList.add('hidden');
             }
         });
 
-        logoutBtn.addEventListener('click', async () => {
-            await supabaseClient.auth.signOut();
-        });
+        document.getElementById('logoutBtn').addEventListener('click', () => supabaseClient.auth.signOut());
 
-        // FONCTION : CHARGER LES RECETTES
+
+        // --- CHARGEMENT ET AFFICHAGE DES RECETTES ---
         async function loadRecipes() {
-            const { data, error } = await supabaseClient
-                .from('recipes')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const { data, error } = await supabaseClient.from('recipes').select('*').order('created_at', { ascending: false });
+            if (error) return;
+            
+            localRecipesCache = data; // Sauvegarde pour la recherche
+            renderRecipeList(data, document.getElementById('recipesContainer'));
+        }
 
-            if (error) {
-                container.innerHTML = "<p>Erreur de chargement.</p>";
+        function renderRecipeList(recipes, targetContainer) {
+            targetContainer.innerHTML = "";
+            if (recipes.length === 0) {
+                targetContainer.innerHTML = "<p>Aucune recette trouvée.</p>";
                 return;
             }
 
-            container.innerHTML = "";
-            if (!data || data.length === 0) {
-                container.innerHTML = "<p>Aucune recette pour le moment.</p>";
-                return;
-            }
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'recette-card';
+                // Cliquer sur la carte ouvre la vue unique de la recette
+                card.onclick = (e) => {
+                    if(e.target.tagName !== 'BUTTON') showSingleRecipe(recipe);
+                };
 
-            data.forEach(recipe => {
-                const dateTexte = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : "Date inconnue";
+                let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img">` : "";
                 
-                let imageHtml = "";
-                if (recipe.image_url) {
-                    imageHtml = `<img src="${recipe.image_url}" class="recette-img" alt="${recipe.title}">`;
-                }
-
-                const recipeCard = document.createElement('div');
-                recipeCard.className = 'recette-card';
-                recipeCard.innerHTML = `
+                card.innerHTML = `
                     <h3>${recipe.title}</h3>
-                    <p class="date">Ajouté le ${dateTexte}</p>
-                    <p style="white-space: pre-line;">${recipe.content}</p>
-                    ${imageHtml}
+                    <p class="date">Ajouté le ${new Date(recipe.created_at).toLocaleDateString('fr-FR')}</p>
+                    ${imgHtml}
                     <button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>
                 `;
-                container.appendChild(recipeCard);
+                targetContainer.appendChild(card);
             });
         }
 
-        // FONCTION : SUPPRIMER
-        async function deleteRecipe(recipeTitle) {
-            if (!confirm(`Voulez-vous vraiment supprimer "${recipeTitle}" ?`)) return;
-            const { error } = await supabaseClient.from('recipes').delete().eq('title', recipeTitle);
-            if (error) alert("Erreur : " + error.message);
-            else loadRecipes();
+        // PAGE DE DETAIL : Afficher UNE seule recette en grand
+        function showSingleRecipe(recipe) {
+            showPage('page-detail');
+            let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img" style="max-height:400px;">` : "";
+            document.getElementById('singleRecipeContent').innerHTML = `
+                <h2 style="margin-top:15px;">${recipe.title}</h2>
+                <p class="date" style="text-align:center;">Date d'ajout : ${new Date(recipe.created_at).toLocaleDateString('fr-FR')}</p>
+                <hr>
+                <p style="white-space: pre-line; font-size:1.1rem; line-height:1.6; background:#f5f5f5; padding:15px; border-radius:6px;">${recipe.content}</p>
+                ${imgHtml}
+            `;
         }
 
-        // FORMULAIRE : AJOUTER AVEC IMAGE
-        recipeForm.addEventListener('submit', async (e) => {
+        // PAGE 4 : FILTRE DE RECHERCHE DYNAMIQUE
+        function filterRecipes() {
+            const query = document.getElementById('searchBar').value.toLowerCase();
+            const filtered = localRecipesCache.filter(r => 
+                r.title.toLowerCase().includes(query) || r.content.toLowerCase().includes(query)
+            );
+            renderRecipeList(filtered, document.getElementById('searchResults'));
+        }
+
+        // SUPPRESSION
+        async function deleteRecipe(title) {
+            if (!confirm(`Supprimer "${title}" ?`)) return;
+            await supabaseClient.from('recipes').delete().eq('title', title);
+            loadRecipes();
+            showPage('page-accueil');
+        }
+
+        // SOUUMISSION DU FORMULAIRE (PAGE AJOUTER)
+        document.getElementById('recipeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const title = document.getElementById('recipeTitle').value;
             const content = document.getElementById('recipeContent').value;
             const imageFile = document.getElementById('recipeImage').files[0];
-            
             let uploadedImageUrl = null;
 
-            // 1. Envoi de l'image si elle existe
             if (imageFile) {
                 const fileName = `${Date.now()}_${imageFile.name}`;
-                
-                // Ligne corrigée ici : suppression du ".style ="
-                const { data: uploadData, error: uploadError } = await supabaseClient
-                    .storage
-                    .from('recipe-images')
-                    .upload(fileName, imageFile);
-
-                if (uploadError) {
-                    alert("Erreur lors de l'envoi de l'image : " + uploadError.message);
-                    return;
+                const { error: upError } = await supabaseClient.storage.from('recipe-images').upload(fileName, imageFile);
+                if (!upError) {
+                    const { data } = supabaseClient.storage.from('recipe-images').getPublicUrl(fileName);
+                    uploadedImageUrl = data.publicUrl;
                 }
-
-                // Récupération de l'URL publique
-                const { data: linkData } = supabaseClient
-                    .storage
-                    .from('recipe-images')
-                    .getPublicUrl(fileName);
-                
-                uploadedImageUrl = linkData.publicUrl;
             }
 
-            // 2. Insertion en base
-            const { error } = await supabaseClient
-                .from('recipes')
-                .insert([{ title, content, image_url: uploadedImageUrl }]);
-
-            if (error) {
-                alert("Erreur d'enregistrement : " + error.message);
-            } else {
-                recipeForm.reset();
-                loadRecipes();
+            const { error } = await supabaseClient.from('recipes').insert([{ title, content, image_url: uploadedImageUrl }]);
+            if (error) alert(error.message);
+            else {
+                document.getElementById('recipeForm').reset();
+                showPage('page-accueil'); // Redirection automatique vers l'accueil après l'ajout
             }
         });
     </script>
