@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recettes de Famille - Accès Sécurisé</title>
+    <title>Recettes de Famille - Avec Photos</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
         h1 { color: #333; text-align: center; }
@@ -17,6 +17,7 @@
         .btn-delete:hover { background-color: #ff1a1a; }
         .hidden { display: none !important; }
         .toggle-link { text-align: center; color: #0066cc; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
+        .recette-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 6px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -28,9 +29,7 @@
         <form id="authForm">
             <input type="email" id="authEmail" placeholder="Votre adresse email" required>
             <input type="password" id="authPassword" placeholder="Votre mot de passe (6 caractères min.)" required>
-            
             <input type="text" id="familyCode" placeholder="Code Secret de la Famille" class="hidden">
-            
             <button type="submit" id="authBtn">Se connecter</button>
         </form>
         <div id="toggleAuthMode" class="toggle-link">Pas encore de compte ? S'inscrire</div>
@@ -46,6 +45,10 @@
             <h3>Partager une vraie recette</h3>
             <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Gratin de courgettes)" required>
             <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="4" required></textarea>
+            
+            <label style="font-size: 0.9rem; color: #555; font-weight: bold;">Ajouter une photo (optionnel) :</label>
+            <input type="file" id="recipeImage" accept="image/*">
+            
             <button type="submit">Enregistrer définitivement</button>
         </form>
 
@@ -58,16 +61,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // CONFIGURATION SUPABASE CIBLE
         const SUPABASE_URL = "https://hyodxzldfnzgsicsfcsp.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5b2R4emxkZm56Z3NpY3NmY3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTMxNDMsImV4cCI6MjA5Nzk2OTE0M30.HkbfxkMG9j5NHFoQcZMavB4XFibRCYDGRt0IxkSsCH0";
-        
-        // CODE SECRET À MODIFIER SI SOUHAITÉ
-        const CODE_SECRET_FAMILLE = "RECULE2026"; 
+        const CODE_SECRET_FAMILLE = "DURAND2026"; 
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Éléments HTML
         const authSection = document.getElementById('authSection');
         const privateSection = document.getElementById('privateSection');
         const authForm = document.getElementById('authForm');
@@ -82,7 +81,6 @@
 
         let isLoginMode = true;
 
-        // Basculer Connexion / Inscription
         toggleAuthMode.addEventListener('click', () => {
             isLoginMode = !isLoginMode;
             if (isLoginMode) {
@@ -100,7 +98,6 @@
             }
         });
 
-        // Soumission de l'authentification
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('authEmail').value;
@@ -115,23 +112,16 @@
                     alert("Code secret de famille incorrect. Inscription refusée.");
                     return;
                 }
-                
                 const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                if (error) {
-                    alert("Erreur d'inscription : " + error.message);
-                } else {
-                    alert("Compte créé avec succès ! Vous êtes connecté.");
-                }
+                if (error) alert("Erreur d'inscription : " + error.message);
             }
         });
 
-        // Suivi de l'état de la session
         supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) {
                 authSection.classList.add('hidden');
                 privateSection.classList.remove('hidden');
                 userGreeting.innerText = "Bonjour, " + session.user.email;
-                authForm.reset();
                 loadRecipes();
             } else {
                 authSection.classList.remove('hidden');
@@ -140,7 +130,6 @@
             }
         });
 
-        // Déconnexion
         logoutBtn.addEventListener('click', async () => {
             await supabaseClient.auth.signOut();
         });
@@ -153,7 +142,7 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                container.innerHTML = "<p>Erreur lors du chargement des recettes.</p>";
+                container.innerHTML = "<p>Erreur de chargement.</p>";
                 return;
             }
 
@@ -165,43 +154,76 @@
 
             data.forEach(recipe => {
                 const dateTexte = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : "Date inconnue";
+                
+                // Vérifier si une image existe pour cette recette
+                let imageHtml = "";
+                if (recipe.image_url) {
+                    imageHtml = `<img src="${recipe.image_url}" class="recette-img" alt="${recipe.title}">`;
+                }
+
                 const recipeCard = document.createElement('div');
                 recipeCard.className = 'recette-card';
                 recipeCard.innerHTML = `
                     <h3>${recipe.title}</h3>
                     <p class="date">Ajouté le ${dateTexte}</p>
                     <p style="white-space: pre-line;">${recipe.content}</p>
+                    ${imageHtml}
                     <button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>
                 `;
                 container.appendChild(recipeCard);
             });
         }
 
-        // FONCTION : SUPPRIMER UNE RECETTE (Utilise la colonne "title" comme identifiant)
+        // FONCTION : SUPPRIMER
         async function deleteRecipe(recipeTitle) {
             if (!confirm(`Voulez-vous vraiment supprimer "${recipeTitle}" ?`)) return;
-
-            const { error } = await supabaseClient
-                .from('recipes')
-                .delete()
-                .eq('title', recipeTitle);
-
+            const { error } = await supabaseClient.from('recipes').delete().eq('title', recipeTitle);
             if (error) alert("Erreur : " + error.message);
             else loadRecipes();
         }
 
-        // FORMULAIRE : AJOUTER UNE RECETTE (Correction appliquée ici à la ligne originale 93)
+        // FORMULAIRE : AJOUTER AVEC IMAGE
         recipeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const title = document.getElementById('recipeTitle').value;
             const content = document.getElementById('recipeContent').value;
+            const imageFile = document.getElementById('recipeImage').files[0];
+            
+            let uploadedImageUrl = null;
 
+            // 1. Si l'utilisateur a sélectionné une image, on l'envoie dans le Bucket
+            if (imageFile) {
+                // On crée un nom de fichier unique (ex: 171824399_mon-gateau.jpg)
+                const fileName = `${Date.now()}_${imageFile.name}`;
+                
+                const { data: uploadData, error: uploadError } = await supabaseClient
+                    .style = await supabaseClient.storage
+                    .from('recipe-images')
+                    .upload(fileName, imageFile);
+
+                if (uploadError) {
+                    alert("Erreur lors de l'envoi de l'image : " + uploadError.message);
+                    return; // On arrête tout si l'image plante
+                }
+
+                // Récupérer l'URL publique générée par Supabase
+                const { data: linkData } = supabaseClient
+                    .storage
+                    .from('recipe-images')
+                    .getPublicUrl(fileName);
+                
+                uploadedImageUrl = linkData.publicUrl;
+            }
+
+            // 2. Insérer la recette dans la table avec l'URL de l'image
             const { error } = await supabaseClient
                 .from('recipes')
-                .insert([{ title, content }]);
+                .insert([{ title, content, image_url: uploadedImageUrl }]);
 
-            if (error) alert("Erreur d'enregistrement : " + error.message);
-            else {
+            if (error) {
+                alert("Erreur d'enregistrement : " + error.message);
+            } else {
                 recipeForm.reset();
                 loadRecipes();
             }
