@@ -1,11 +1,384 @@
-document.getElementById('recipeForm').addEventListener('submit', async (e) => {
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Carnet de Recettes Familial</title>
+    <style>
+        /* Configuration plein écran et réinitialisation */
+        html, body { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: #ffffff; font-family: Arial, sans-serif; box-sizing: border-box; }
+        
+        /* Titre principal centré en haut */
+        .site-title { text-align: center; margin: 20px 0 10px 0; font-size: 1.5rem; font-weight: bold; }
+
+        /* ZONE AUTHENTIFICATION (Centrée au départ) */
+        .auth-box { max-width: 450px; margin: 80px auto; background: white; padding: 30px; border: 3px solid #000000; border-radius: 0px; }
+        input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 3px solid #000000; font-size: 1rem; font-weight: bold; background: white; }
+        button { background-color: #000000; color: white; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #333333; }
+        .hidden { display: none !important; }
+        .toggle-link { text-align: center; color: #0066cc; cursor: pointer; margin-top: 15px; font-size: 0.9rem; text-decoration: underline; }
+
+        /* --- INTERFACE EN 3 COLONNES (PAGE PRINCIPALE ACCUEIL) --- */
+        .app-container { 
+            display: grid; 
+            grid-template-columns: 220px 1fr 220px; 
+            gap: 30px;
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+            box-sizing: border-box;
+        }
+
+        /* Colonne Gauche : Boutons de navigation */
+        .sidebar-left { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px;
+        }
+        .btn-nav { 
+            background-color: #ffffff; 
+            color: #000000; 
+            border: 4px solid #000000; 
+            padding: 15px 10px; 
+            font-size: 1.1rem; 
+            text-align: center; 
+            font-weight: bold;
+            margin: 0;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-nav:hover, .btn-nav.active { 
+            background-color: #000000; 
+            color: #ffffff; 
+        }
+
+        /* Colonne Centrale : Contenu */
+        .main-content { 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* ZONE PLEIN ÉCRAN (Pour Profil, Ajouter, Toutes les recettes, Détail) */
+        .full-page-focus {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .page-content {
+            width: 100%;
+        }
+        .section-title { text-align: left; font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; margin-top: 0; }
+
+        /* Liste des recettes */
+        .recipes-list { display: flex; flex-direction: column; gap: 20px; }
+        .recette-card { 
+            position: relative; 
+            background: #ffffff; 
+            padding: 25px; 
+            border: 4px solid #000000; 
+            cursor: pointer; 
+            box-sizing: border-box;
+            min-height: 120px;
+        }
+        .recette-card h3 { margin: 0 120px 5px 0; font-size: 1.4rem; font-weight: bold; }
+        
+        /* Affichage de l'auteur */
+        .meta-info { font-size: 0.85rem; color: #555; margin: 0 0 10px 0; }
+        .author-tag { font-weight: bold; color: #000000; background-color: #f0f0f0; padding: 2px 6px; border: 1px solid #000; }
+
+        .btn-delete { position: absolute; top: 25px; right: 25px; background-color: #ff4d4d; color: white; border: 2px solid #000000; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; width: auto; margin: 0; font-weight: bold; }
+        .btn-delete:hover { background-color: #cc0000; }
+        
+        .btn-edit { background-color: #ffffff; color: #000000; border: 3px solid #000000; padding: 10px 15px; cursor: pointer; font-size: 1rem; width: auto; font-weight: bold; margin-top: 15px; }
+        .btn-edit:hover { background-color: #000000; color: #ffffff; }
+
+        .recette-img { width: 100%; max-height: 250px; object-fit: cover; border: 3px solid #000000; margin-top: 15px; }
+        
+        /* Bouton Retour */
+        .btn-back { width: auto; background-color: #ffffff; color: #000; border: 4px solid #000; margin-bottom: 30px; padding: 10px 20px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn-back:hover { background: #000; color: #fff; }
+
+        /* Colonne Droite : Grand rectangle vertical des Contributeurs */
+        .sidebar-right { 
+            display: flex;
+            flex-direction: column;
+        }
+        .contributors-box {
+            border: 4px solid #000000;
+            flex-grow: 1;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .contributors-box h3 { font-size: 1.5rem; font-weight: bold; margin-top: 10px; text-align: center; width: 100%; }
+        .contributors-placeholder { color: #555; font-size: 0.95rem; text-align: center; margin-top: 50px; line-height: 1.4; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; gap: 20px; }
+            .sidebar-left { order: 1; }
+            .main-content { order: 2; }
+            .sidebar-right { order: 3; }
+            .contributors-box { min-height: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="siteTitle" class="site-title">Bienvenue sur le site des recettes ultimes</div>
+
+    <div id="page-auth" class="auth-box">
+        <h2 style="text-align: center; margin-top: 0;">Connexion</h2>
+        <form id="authForm">
+            <input type="email" id="authEmail" placeholder="Votre adresse email" required>
+            <input type="password" id="authPassword" placeholder="Votre mot de passe" required>
+            <input type="text" id="familyCode" placeholder="Code Secret de la Famille" class="hidden">
+            <button type="submit" id="authBtn">Se connecter</button>
+        </form>
+        <div id="toggleAuthMode" class="toggle-link">Pas encore de compte ? S'inscrire</div>
+    </div>
+
+    <div id="privateZone" class="hidden">
+        
+        <div id="layout-3-colonnes" class="app-container">
+            <aside class="sidebar-left">
+                <button class="btn-nav" onclick="showPage('page-profil')">Profil</button>
+                <button class="btn-nav" onclick="showPage('page-ajouter')">Ajouter une recette</button>
+                <button class="btn-nav" onclick="showPage('page-recherche')">Accéder aux recettes</button>
+            </aside>
+
+            <main class="main-content">
+                <div id="page-accueil" class="page-content">
+                    <div class="section-title">Derniers ajouts</div>
+                    <div id="recipesContainer" class="recipes-list"><p>Chargement des recettes ultimes...</p></div>
+                </div>
+            </main>
+
+            <aside class="sidebar-right">
+                <div class="contributors-box">
+                    <h3>Contributeurs</h3>
+                    <div class="contributors-placeholder">
+                        Affichage des membres de la famille et statistiques de cuisine bientôt disponibles.
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div id="layout-focus" class="full-page-focus hidden">
+            
+            <div id="page-ajouter" class="page-content hidden">
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
+                <div class="section-title">Partager une recette</div>
+                <form id="recipeForm">
+                    <input type="text" id="recipeTitle" placeholder="Nom du plat" required>
+                    <textarea id="recipeContent" placeholder="Ingrédients et étapes de préparation..." rows="8" required></textarea>
+                    <label style="font-size: 0.9rem; font-weight: bold; display:block; margin-top:10px;">Photo (Optionnelle) :</label>
+                    <input type="file" id="recipeImage" accept="image/*">
+                    <button type="submit">Enregistrer la recette</button>
+                </form>
+            </div>
+
+            <div id="page-recherche" class="page-content hidden">
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
+                <div class="section-title">Toutes les recettes</div>
+                <input type="text" id="searchBar" placeholder="Rechercher par ingrédient, titre ou auteur..." oninput="filterRecipes()">
+                <div id="searchResults" class="recipes-list"></div>
+            </div>
+
+            <div id="page-profil" class="page-content hidden">
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
+                <div class="section-title">Mon Profil Familial</div>
+                <p style="text-align: center; margin: 30px 0; font-size: 1.1rem;" id="userEmailDisplay"></p>
+                <button id="logoutBtn" style="background-color: #ffffff; color: red; border-color: red;">Se déconnecter du carnet</button>
+            </div>
+
+            <div id="page-detail" class="page-content hidden">
+                <button class="btn-back" onclick="showPage('page-accueil')">← Retour à la page principale</button>
+                <div id="singleRecipeContent"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = "https://hyodxzldfnzgsicsfcsp.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5b2R4emxkZm56Z3NpY3NmY3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTMxNDMsImV4cCI6MjA5Nzk2OTE0M30.HkbfxkMG9j5NHFoQcZMavB4XFibRCYDGRt0IxkSsCH0";
+        const CODE_SECRET_FAMILLE = "RECULE2026"; 
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let localRecipesCache = [];
+        let currentUserEmail = "";
+
+        // GESTION DE LA NAVIGATION
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+            
+            if (pageId === 'page-accueil') {
+                document.getElementById('layout-focus').classList.add('hidden');
+                document.getElementById('layout-3-colonnes').classList.remove('hidden');
+                document.getElementById('siteTitle').classList.remove('hidden'); 
+                document.getElementById('page-accueil').classList.remove('hidden');
+                loadRecipes();
+            } else {
+                document.getElementById('layout-3-colonnes').classList.add('hidden');
+                document.getElementById('siteTitle').classList.add('hidden'); 
+                document.getElementById('layout-focus').classList.remove('hidden');
+                document.getElementById(pageId).classList.remove('hidden');
+            }
+        }
+
+        // --- AUTHENTIFICATION ---
+        const authForm = document.getElementById('authForm');
+        const toggleAuthMode = document.getElementById('toggleAuthMode');
+        const familyCodeInput = document.getElementById('familyCode');
+        let isLoginMode = true;
+
+        toggleAuthMode.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                document.querySelector('#page-auth h2').innerText = "Connexion";
+                document.getElementById('authBtn').innerText = "Se connecter";
+                toggleAuthMode.innerText = "Pas encore de compte ? S'inscrire";
+                familyCodeInput.classList.add('hidden');
+            } else {
+                document.querySelector('#page-auth h2').innerText = "Inscription Familiale";
+                document.getElementById('authBtn').innerText = "Créer mon compte";
+                toggleAuthMode.innerText = "Déjà inscrit ? Se connecter";
+                familyCodeInput.classList.remove('hidden');
+            }
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            if (isLoginMode) {
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) alert(error.message);
+            } else {
+                if (familyCodeInput.value !== CODE_SECRET_FAMILLE) {
+                    alert("Code de famille invalide.");
+                    return;
+                }
+                const { error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) alert(error.message);
+            }
+        });
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                currentUserEmail = session.user.email;
+                document.getElementById('page-auth').classList.add('hidden');
+                document.getElementById('privateZone').classList.remove('hidden');
+                document.getElementById('userEmailDisplay').innerText = "Utilisateur connecté : " + currentUserEmail;
+                showPage('page-accueil');
+            } else {
+                currentUserEmail = "";
+                document.getElementById('page-auth').classList.remove('hidden');
+                document.getElementById('privateZone').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => supabaseClient.auth.signOut());
+
+        // --- GESTION DES RECETTES ---
+        async function loadRecipes() {
+            const { data, error } = await supabaseClient.from('recipes').select('*').order('created_at', { ascending: false });
+            if (error) return;
+            
+            localRecipesCache = data;
+            renderRecipeList(data, document.getElementById('recipesContainer'));
+        }
+
+        function renderRecipeList(recipes, targetContainer) {
+            targetContainer.innerHTML = "";
+            if (!recipes || recipes.length === 0) {
+                targetContainer.innerHTML = "<p style='color:#666; text-align:center; margin-top:20px;'>Aucune recette disponible.</p>";
+                return;
+            }
+
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'recette-card';
+                card.onclick = (e) => {
+                    if(e.target.tagName !== 'BUTTON') showSingleRecipe(recipe);
+                };
+
+                let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img">` : "";
+                const author = recipe.author ? recipe.author : "Anonyme";
+                
+                let deleteBtnHtml = "";
+                if (currentUserEmail && author === currentUserEmail) {
+                    deleteBtnHtml = `<button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>`;
+                }
+                
+                card.innerHTML = `
+                    <h3>${recipe.title}</h3>
+                    <div class="meta-info">Par <span class="author-tag">${author}</span> • Le ${recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}</div>
+                    <p style="white-space: pre-line; margin: 5px 0; color:#333;">${recipe.content ? recipe.content.substring(0, 140) + '...' : ''}</p>
+                    ${imgHtml}
+                    ${deleteBtnHtml}
+                `;
+                targetContainer.appendChild(card);
+            });
+        }
+
+        function showSingleRecipe(recipe) {
+            showPage('page-detail');
+            let imgHtml = recipe.image_url ? `<img src="${recipe.image_url}" class="recette-img" style="max-height:450px; width:auto; display:block; margin: 20px auto 0 auto;">` : "";
+            const author = recipe.author ? recipe.author : "Anonyme";
+            
+            let actionButtonsHtml = "";
+            if (currentUserEmail && author === currentUserEmail) {
+                actionButtonsHtml = `
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button class="btn-edit" onclick="enableRecipeEdit()">✏️ Modifier la recette</button>
+                    </div>
+                `;
+            }
+
+            document.getElementById('singleRecipeContent').innerHTML = `
+                <div id="recipe-view-mode">
+                    <h2 style="text-align:left; margin-bottom:5px; font-size:1.8rem;">${recipe.title}</h2>
+                    <div class="meta-info" style="font-size:1rem; margin-bottom:15px;">Proposée par <span class="author-tag">${author}</span> • Ajoutée le ${recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : 'Inconnue'}</div>
+                    <hr style="border:0; border-top:4px solid #000; margin:15px 0;">
+                    <p style="white-space: pre-line; font-size:1.15rem; line-height:1.6; background:#f9f9f9; padding:25px; border:3px solid #000;">${recipe.content}</p>
+                    ${imgHtml}
+                    ${actionButtonsHtml}
+                </div>
+                <div id="recipe-edit-mode" class="hidden">
+                    <div class="section-title">Modifier votre recette</div>
+                    <input type="text" id="editRecipeTitle" value="${recipe.title}" required>
+                    <textarea id="editRecipeContent" rows="10" required>${recipe.content}</textarea>
+                    <div style="display:flex; gap:15px;">
+                        <button onclick="saveRecipeEdit(\`${recipe.title}\`)" style="background:#000; color:#fff;">Enregistrer les modifications</button>
+                        <button onclick="cancelRecipeEdit()" style="background:#fff; color:#000;">Annuler</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function enableRecipeEdit() {
+            document.getElementById('recipe-view-mode').classList.add('hidden');
+            document.getElementById('recipe-edit-mode').classList.remove('hidden');
+        }
+
+        document.getElementById('recipeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const title = document.getElementById('recipeTitle').value;
             const content = document.getElementById('recipeContent').value;
             const imageFile = document.getElementById('recipeImage').files[0];
             let uploadedImageUrl = null;
 
-            // 1. Gestion de l'image optionnelle
             if (imageFile) {
                 const fileName = `${Date.now()}_${imageFile.name}`;
                 try {
@@ -19,25 +392,69 @@ document.getElementById('recipeForm').addEventListener('submit', async (e) => {
                 }
             }
 
-            // 2. Vérification de la session utilisateur
             if (!currentUserEmail) {
                 alert("Erreur : Vous devez être connecté pour ajouter une recette.");
                 return;
             }
 
-            // 3. Insertion stricte avec l'auteur connecté
             const { error } = await supabaseClient.from('recipes').insert([{ 
                 title, 
                 content, 
                 image_url: uploadedImageUrl,
-                author: currentUserEmail // Envoie l'e-mail de la session actuelle
+                author: currentUserEmail
             }]);
             
             if (error) {
-                // S'il y a un problème (ex: colonne 'author' manquante), l'erreur s'affiche ici
                 alert("Erreur lors de l'enregistrement : " + error.message);
             } else {
                 document.getElementById('recipeForm').reset();
                 showPage('page-accueil');
             }
         });
+
+        function cancelRecipeEdit() {
+            document.getElementById('recipe-edit-mode').classList.add('hidden');
+            document.getElementById('recipe-view-mode').classList.remove('hidden');
+        }
+
+        async function saveRecipeEdit(oldTitle) {
+            const newTitle = document.getElementById('editRecipeTitle').value;
+            const newContent = document.getElementById('editRecipeContent').value;
+
+            if(!newTitle || !newContent) {
+                alert("Le titre et le contenu ne peuvent pas être vides.");
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('recipes')
+                .update({ title: newTitle, content: newContent })
+                .eq('title', oldTitle);
+
+            if (error) {
+                alert("Erreur lors de la mise à jour : " + error.message);
+            } else {
+                alert("Recette mise à jour avec succès !");
+                showPage('page-accueil');
+            }
+        }
+
+        function filterRecipes() {
+            const query = document.getElementById('searchBar').value.toLowerCase();
+            const filtered = localRecipesCache.filter(r => 
+                (r.title && r.title.toLowerCase().includes(query)) || 
+                (r.content && r.content.toLowerCase().includes(query)) ||
+                (r.author && r.author.toLowerCase().includes(query))
+            );
+            renderRecipeList(filtered, document.getElementById('searchResults'));
+        }
+
+        async function deleteRecipe(title) {
+            if (!confirm(`Confirmer la suppression de "${title}" ?`)) return;
+            await supabaseClient.from('recipes').delete().eq('title', title);
+            loadRecipes();
+            showPage('page-accueil');
+        }
+    </script>
+</body>
+</html>
